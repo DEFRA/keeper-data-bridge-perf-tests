@@ -4,17 +4,19 @@ services:
     volumes:
       - ./reports:/opt/perftest/reports
     depends_on:
-      service:
+      localstack:
         condition: service_healthy
     env_file:
       - 'compose/aws.env'
+      - '.env'
     environment:
       S3_ENDPOINT: 'http://localstack:4566'
       RESULTS_OUTPUT_S3_PATH: 's3://test-results'
-      ENVIRONMENT: local
-      SERVICE_ENDPOINT: localhost
-      SERVICE_PORT: 3000
-      SERVICE_URL_SCHEME: http
+      ENVIRONMENT: perf-test
+      SERVICE_ENDPOINT: ephemeral-protected.api.perf-test.cdp-int.defra.cloud
+      SERVICE_PORT: 443
+      SERVICE_URL_SCHEME: https
+      SERVICE_PATH_PREFIX: ls-keeper-data-bridge-backend
     networks:
       - performance-tests
 
@@ -47,32 +49,6 @@ services:
     ports:
       - '6379:6379'
     restart: always
-    networks:
-      - performance-tests
-
-  service:
-    # replace service-name with the name of your service being performace tested
-    image: defradigital/service-name:${SERVICE_VERSION:-latest}
-    ports:
-      - '3000:3000'
-    links:
-      - 'localstack:localstack'
-      - 'redis:redis'
-    depends_on:
-      localstack:
-        condition: service_healthy
-    env_file:
-      - 'compose/aws.env'
-    environment:
-      PORT: 3000
-      NODE_ENV: development
-      REDIS_HOST: redis
-      USE_SINGLE_INSTANCE_CACHE: true
-    healthcheck:
-      test: ['CMD', 'curl', 'localhost:3000/health']
-      interval: 5s
-      start_period: 5s
-      retries: 3
     networks:
       - performance-tests
 
